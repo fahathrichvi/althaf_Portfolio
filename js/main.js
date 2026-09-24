@@ -1,3 +1,8 @@
+/* Copyright (c) 2026 Fahath Richvi. All rights reserved.
+   Portfolio website for Mohammed Althaf — designed & developed by Fahath Richvi.
+   Commercial use without written permission is prohibited. See LICENSE.
+*/
+
 (() => {
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const finePointer = window.matchMedia("(pointer: fine)").matches;

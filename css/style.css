@@ -1,3 +1,8 @@
+/* Copyright (c) 2026 Fahath Richvi. All rights reserved.
+   Portfolio website for Mohammed Althaf — designed & developed by Fahath Richvi.
+   Commercial use without written permission is prohibited. See LICENSE.
+*/
+
 :root {
   --bg: #030305;
   --bg-2: #0a0a10;
@@ -493,6 +498,7 @@ img { max-width: 100%; display: block; }
 }
 .footer .credit { font: 500 .72rem var(--display); letter-spacing: .3em; text-transform: uppercase; }
 .footer .credit .grad-warm { font-weight: 700; }
+.footer .footer-small { font-size: .72rem; opacity: .7; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 1080px) {

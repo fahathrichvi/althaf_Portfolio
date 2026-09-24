@@ -1,3 +1,8 @@
+/* Copyright (c) 2026 Fahath Richvi. All rights reserved.
+   Portfolio website for Mohammed Althaf — designed & developed by Fahath Richvi.
+   Commercial use without written permission is prohibited. See LICENSE.
+*/
+
 import * as THREE from "three";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
