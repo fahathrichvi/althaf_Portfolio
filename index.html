@@ -5,32 +5,41 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Mohammed Althaf | Full-Stack Developer</title>
   <meta name="description" content="Mohammed Althaf — Full-Stack Developer, Frontend Developer and UI/UX Designer based in Doha, Qatar. Building responsive, scalable web applications." />
-  <meta name="theme-color" content="#060812" />
+  <meta name="author" content="Fahath Richvi" />
+  <meta name="theme-color" content="#030305" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;800&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
   <script type="importmap">
-    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
   </script>
 </head>
 <body>
-  <!-- Loader -->
+  <!-- Loader: glowing chip -->
   <div class="loader" id="loader">
-    <div class="loader-cube">
-      <span></span><span></span><span></span><span></span><span></span><span></span>
+    <div class="chip">
+      <div class="chip-core"></div>
+      <span class="pins top"></span><span class="pins bottom"></span>
+      <span class="pins left"></span><span class="pins right"></span>
     </div>
-    <p class="mono">&lt;loading portfolio /&gt;</p>
+    <p class="loader-text">BOOTING SYSTEM</p>
+    <div class="loader-bar"><span></span></div>
   </div>
 
   <!-- 3D background -->
   <canvas id="bg"></canvas>
-  <div class="grid-overlay" aria-hidden="true"></div>
+  <div class="scrim" id="scrim" aria-hidden="true"></div>
   <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
 
   <!-- Nav -->
   <header class="nav" id="nav">
-    <a href="#home" class="logo mono">&lt;<span>MA</span> /&gt;</a>
+    <a href="#home" class="logo"><span class="logo-mark">M</span><span class="logo-text">ALTHAF</span></a>
     <nav>
       <ul class="nav-links" id="navLinks">
         <li><a href="#about">About</a></li>
@@ -47,46 +56,75 @@
     <!-- Hero -->
     <section class="hero" id="home">
       <div class="hero-content">
-        <p class="eyebrow mono reveal">// Hello World, I'm</p>
+        <p class="eyebrow reveal">Portfolio <i></i> Full-Stack Developer</p>
         <h1 class="hero-title reveal">
-          <span class="line">Mohammed</span>
-          <span class="line gradient-text">Althaf</span>
+          <span class="line thin">Mohammed</span>
+          <span class="line grad-warm">Althaf</span>
         </h1>
         <p class="hero-role mono reveal">
-          <span class="prompt">&gt;</span> <span id="typed"></span><span class="caret">_</span>
+          <span class="prompt">~/althaf $</span> <span id="typed"></span><span class="caret">▌</span>
         </p>
         <p class="hero-text reveal">
           I build responsive, user-friendly web applications — from pixel-perfect interfaces
           to secure backend APIs and databases.
         </p>
         <div class="hero-cta reveal">
-          <a href="#projects" class="btn btn-primary">View My Work</a>
-          <a href="assets/Mohammed_Althaf_CV.pdf" class="btn btn-ghost" download>Download CV</a>
+          <a href="#projects" class="btn btn-primary"><span>View My Work</span></a>
+          <a href="assets/Mohammed_Althaf_CV.pdf" class="btn btn-ghost" download><span>Download CV</span></a>
         </div>
         <div class="hero-meta mono reveal">
           <span><i class="dot"></i> Available for opportunities</span>
-          <span>📍 Doha, Qatar</span>
+          <span>◉ Doha, Qatar</span>
         </div>
       </div>
-      <a href="#about" class="scroll-hint" aria-label="Scroll down">
-        <span class="mouse"><span class="wheel"></span></span>
-      </a>
+      <div class="hero-tagline reveal">
+        <p>Ideas become code.</p>
+        <p class="accent">Code becomes impact.</p>
+      </div>
+      <a href="#manifesto" class="scroll-hint" aria-label="Scroll down"><span></span></a>
+    </section>
+
+    <!-- Manifesto -->
+    <section class="manifesto" id="manifesto">
+      <h2 class="pixel reveal">&lt;CODING/&gt;</h2>
+      <p class="reveal">
+        Symbols add up to programs. Programs add up to products.
+        Every line I write is a step toward something real.
+      </p>
+      <p class="reveal manifesto-sub">My code is my future.</p>
     </section>
 
     <!-- About -->
     <section class="section" id="about">
       <div class="section-head reveal">
-        <span class="section-num mono">01.</span>
+        <span class="section-num">// 01</span>
         <h2>About Me</h2>
         <span class="section-line"></span>
       </div>
       <div class="about-grid">
-        <div class="about-photo reveal tilt">
+        <div class="about-photo reveal">
+          <svg class="circuit" viewBox="0 0 400 400" aria-hidden="true">
+            <g class="traces">
+              <path d="M200 60 V20 H120" /><path d="M170 66 V40 H70 V10" /><path d="M230 66 V35 H330" />
+              <path d="M340 200 H380 V120" /><path d="M334 170 H360 V70" /><path d="M334 230 H390" />
+              <path d="M60 200 H20 V280" /><path d="M66 170 H35 V110 H10" /><path d="M66 230 H45 V330" />
+              <path d="M200 340 V385 H290" /><path d="M170 334 V370 H95" /><path d="M230 334 V360 H350 V390" />
+            </g>
+            <g class="pulses">
+              <path d="M200 60 V20 H120" /><path d="M334 170 H360 V70" /><path d="M66 230 H45 V330" />
+              <path d="M230 334 V360 H350 V390" /><path d="M230 66 V35 H330" /><path d="M60 200 H20 V280" />
+            </g>
+            <g class="pads">
+              <circle cx="120" cy="20" r="5" /><circle cx="70" cy="10" r="5" /><circle cx="330" cy="35" r="5" />
+              <circle cx="380" cy="120" r="5" /><circle cx="360" cy="70" r="5" /><circle cx="390" cy="230" r="5" />
+              <circle cx="20" cy="280" r="5" /><circle cx="10" cy="110" r="5" /><circle cx="45" cy="330" r="5" />
+              <circle cx="290" cy="385" r="5" /><circle cx="95" cy="370" r="5" /><circle cx="350" cy="390" r="5" />
+            </g>
+          </svg>
           <div class="photo-frame">
             <img src="assets/profile.jpg" alt="Mohammed Althaf" onerror="this.remove()" />
             <span class="photo-fallback">MA</span>
           </div>
-          <div class="photo-orbit"><span></span></div>
         </div>
         <div class="about-text reveal">
           <p>
@@ -103,25 +141,42 @@
             sharpening my skills through real-world projects.
           </p>
           <div class="stats">
-            <div class="stat"><span class="stat-num" data-count="5">0</span><span class="stat-plus">+</span><p>Projects Built</p></div>
+            <div class="stat"><span class="stat-num" data-count="5">0</span><span class="stat-num">+</span><p>Projects Built</p></div>
             <div class="stat"><span class="stat-num" data-count="4">0</span><p>Tech Domains</p></div>
             <div class="stat"><span class="stat-num" data-count="2">0</span><p>Languages Spoken</p></div>
           </div>
         </div>
+      </div>
+
+      <!-- Code editor card -->
+      <div class="editor reveal tilt">
+        <div class="card-glare"></div>
+        <div class="editor-bar">
+          <span class="dots"><i></i><i></i><i></i></span>
+          <span class="mono editor-file">developer.js</span>
+        </div>
+<pre class="editor-code mono"><code><span class="ln">1</span><span class="kw">const</span> <span class="var">developer</span> = {
+<span class="ln">2</span>  <span class="key">name</span>: <span class="str">"Mohammed Althaf"</span>,
+<span class="ln">3</span>  <span class="key">role</span>: [<span class="str">"Full-Stack"</span>, <span class="str">"Frontend"</span>, <span class="str">"UI/UX"</span>],
+<span class="ln">4</span>  <span class="key">location</span>: <span class="str">"Doha, Qatar"</span>,
+<span class="ln">5</span>  <span class="key">stack</span>: [<span class="str">"React"</span>, <span class="str">"Node.js"</span>, <span class="str">"Express"</span>, <span class="str">"MySQL"</span>, <span class="str">"MongoDB"</span>],
+<span class="ln">6</span>  <span class="key">education</span>: <span class="str">"HND in Web Development"</span>,
+<span class="ln">7</span>  <span class="fn">build</span>(<span class="var">idea</span>) { <span class="kw">return</span> <span class="var">idea</span>.<span class="fn">toCode</span>().<span class="fn">ship</span>(); },
+<span class="ln">8</span>};<span class="caret">▌</span></code></pre>
       </div>
     </section>
 
     <!-- Skills -->
     <section class="section" id="skills">
       <div class="section-head reveal">
-        <span class="section-num mono">02.</span>
+        <span class="section-num">// 02</span>
         <h2>Technical Skills</h2>
         <span class="section-line"></span>
       </div>
       <div class="skills-grid">
         <article class="skill-card reveal tilt">
           <div class="card-glare"></div>
-          <div class="skill-icon">&lt;/&gt;</div>
+          <div class="skill-icon"><span>&lt;/&gt;</span></div>
           <h3>Frontend</h3>
           <ul class="chips">
             <li>HTML5</li><li>CSS3</li><li>JavaScript ES6+</li><li>React</li>
@@ -130,7 +185,7 @@
         </article>
         <article class="skill-card reveal tilt">
           <div class="card-glare"></div>
-          <div class="skill-icon">{ }</div>
+          <div class="skill-icon"><span>{ }</span></div>
           <h3>Backend &amp; APIs</h3>
           <ul class="chips">
             <li>Node.js</li><li>Express.js</li><li>RESTful APIs</li>
@@ -139,7 +194,7 @@
         </article>
         <article class="skill-card reveal tilt">
           <div class="card-glare"></div>
-          <div class="skill-icon">⛁</div>
+          <div class="skill-icon"><span>DB</span></div>
           <h3>Database</h3>
           <ul class="chips">
             <li>MySQL</li><li>MongoDB</li><li>SQL</li><li>CRUD Operations</li>
@@ -147,7 +202,7 @@
         </article>
         <article class="skill-card reveal tilt">
           <div class="card-glare"></div>
-          <div class="skill-icon">◈</div>
+          <div class="skill-icon"><span>UI</span></div>
           <h3>UI/UX &amp; Tools</h3>
           <ul class="chips">
             <li>Figma</li><li>Wireframes</li><li>Prototypes</li><li>Components</li>
@@ -156,9 +211,8 @@
         </article>
       </div>
 
-      <!-- Tech marquee -->
       <div class="marquee" aria-hidden="true">
-        <div class="marquee-track mono">
+        <div class="marquee-track">
           <span>HTML5</span><span>CSS3</span><span>JavaScript</span><span>React</span><span>Node.js</span><span>Express</span><span>MySQL</span><span>MongoDB</span><span>REST APIs</span><span>Figma</span><span>Git</span><span>GitHub</span>
           <span>HTML5</span><span>CSS3</span><span>JavaScript</span><span>React</span><span>Node.js</span><span>Express</span><span>MySQL</span><span>MongoDB</span><span>REST APIs</span><span>Figma</span><span>Git</span><span>GitHub</span>
         </div>
@@ -168,18 +222,20 @@
     <!-- Projects -->
     <section class="section" id="projects">
       <div class="section-head reveal">
-        <span class="section-num mono">03.</span>
+        <span class="section-num">// 03</span>
         <h2>Featured Projects</h2>
         <span class="section-line"></span>
       </div>
       <p class="section-sub mono reveal">NTC-KDMC-NENASALA · Kalmunai, Sri Lanka · 2024 – 2026</p>
 
       <div class="projects-grid">
-        <article class="project-card reveal tilt">
+        <article class="project-card reveal tilt" style="--glow: var(--orange)">
           <div class="card-glare"></div>
-          <div class="project-visual v-ecom"><span class="project-emoji">🛒</span></div>
+          <div class="project-visual">
+            <svg viewBox="0 0 24 24" class="project-icon"><path d="M3 4h2l2.4 11h10.2L20 7H6.3" /><circle cx="9" cy="19.5" r="1.5" /><circle cx="17" cy="19.5" r="1.5" /></svg>
+          </div>
           <div class="project-body">
-            <span class="project-num mono">01</span>
+            <span class="project-num mono">PRJ_01</span>
             <h3>E-Commerce Platform</h3>
             <ul class="project-points">
               <li>Developed a responsive web application</li>
@@ -190,11 +246,13 @@
           </div>
         </article>
 
-        <article class="project-card reveal tilt">
+        <article class="project-card reveal tilt" style="--glow: var(--blue)">
           <div class="card-glare"></div>
-          <div class="project-visual v-biz"><span class="project-emoji">🏢</span></div>
+          <div class="project-visual">
+            <svg viewBox="0 0 24 24" class="project-icon"><path d="M4 21V5l8-3v19M12 8h8v13M2 21h20M7 8h2M7 12h2M7 16h2M15 12h2M15 16h2" /></svg>
+          </div>
           <div class="project-body">
-            <span class="project-num mono">02</span>
+            <span class="project-num mono">PRJ_02</span>
             <h3>Business Website</h3>
             <ul class="project-points">
               <li>Built a modern, responsive business website</li>
@@ -205,11 +263,13 @@
           </div>
         </article>
 
-        <article class="project-card reveal tilt">
+        <article class="project-card reveal tilt" style="--glow: var(--red)">
           <div class="card-glare"></div>
-          <div class="project-visual v-dash"><span class="project-emoji">📊</span></div>
+          <div class="project-visual">
+            <svg viewBox="0 0 24 24" class="project-icon"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M7 16v-4M11 16V8M15 16v-6M19 7l-3 3-2-2-3 3" /></svg>
+          </div>
           <div class="project-body">
-            <span class="project-num mono">03</span>
+            <span class="project-num mono">PRJ_03</span>
             <h3>Admin Dashboard</h3>
             <ul class="project-points">
               <li>Developed a dashboard with charts and tables</li>
@@ -220,11 +280,13 @@
           </div>
         </article>
 
-        <article class="project-card reveal tilt">
+        <article class="project-card reveal tilt" style="--glow: var(--cyan)">
           <div class="card-glare"></div>
-          <div class="project-visual v-book"><span class="project-emoji">📅</span></div>
+          <div class="project-visual">
+            <svg viewBox="0 0 24 24" class="project-icon"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4M8 14h2M14 14h2M8 17h2" /></svg>
+          </div>
           <div class="project-body">
-            <span class="project-num mono">04</span>
+            <span class="project-num mono">PRJ_04</span>
             <h3>Appointment Booking System</h3>
             <ul class="project-points">
               <li>Built an appointment booking system</li>
@@ -235,11 +297,13 @@
           </div>
         </article>
 
-        <article class="project-card reveal tilt">
+        <article class="project-card reveal tilt" style="--glow: var(--amber)">
           <div class="card-glare"></div>
-          <div class="project-visual v-bake"><span class="project-emoji">🧁</span></div>
+          <div class="project-visual">
+            <svg viewBox="0 0 24 24" class="project-icon"><path d="M4 13h16l-1.5 8h-13zM6 13a6 6 0 0 1 12 0M12 4v3M9 5l1 2M15 5l-1 2" /></svg>
+          </div>
           <div class="project-body">
-            <span class="project-num mono">05</span>
+            <span class="project-num mono">PRJ_05</span>
             <h3>Bakery &amp; Sweets Website</h3>
             <ul class="project-points">
               <li>Designed a responsive bakery website</li>
@@ -255,8 +319,8 @@
     <!-- Education -->
     <section class="section" id="education">
       <div class="section-head reveal">
-        <span class="section-num mono">04.</span>
-        <h2>Education &amp; Languages</h2>
+        <span class="section-num">// 04</span>
+        <h2>Education</h2>
         <span class="section-line"></span>
       </div>
       <div class="timeline">
@@ -286,16 +350,16 @@
     <!-- Contact -->
     <section class="section" id="contact">
       <div class="section-head reveal">
-        <span class="section-num mono">05.</span>
+        <span class="section-num">// 05</span>
         <h2>Get In Touch</h2>
         <span class="section-line"></span>
       </div>
       <div class="contact-grid">
         <div class="contact-info reveal">
-          <h3 class="contact-lead">Let's build something <span class="gradient-text">amazing</span> together.</h3>
+          <h3 class="contact-lead">Let's build something <span class="grad-warm">amazing</span> together.</h3>
           <p>I'm open to full-stack, frontend and UI/UX roles as well as freelance projects. Drop me a message and I'll get back to you.</p>
           <a class="contact-item" href="mailto:althaf.official9824@gmail.com">
-            <span class="ci-icon">✉</span><span>althaf.official9824@gmail.com</span>
+            <span class="ci-icon">@</span><span>althaf.official9824@gmail.com</span>
           </a>
           <a class="contact-item" href="tel:+97431610588">
             <span class="ci-icon">☎</span><span>+974 3161 0588</span>
@@ -304,10 +368,10 @@
             <span class="ci-icon">in</span><span>linkedin.com/in/althaf-ahamed123</span>
           </a>
           <a class="contact-item" href="https://github.com/althaf9824" target="_blank" rel="noopener">
-            <span class="ci-icon">⌥</span><span>github.com/althaf9824</span>
+            <span class="ci-icon">&lt;&gt;</span><span>github.com/althaf9824</span>
           </a>
           <div class="contact-item static">
-            <span class="ci-icon">⌖</span><span>Doha, Qatar</span>
+            <span class="ci-icon">◉</span><span>Doha, Qatar</span>
           </div>
         </div>
         <form class="contact-form reveal tilt" id="contactForm">
@@ -324,14 +388,15 @@
             <span>Message</span>
             <textarea name="message" rows="5" required placeholder="Tell me about your project..."></textarea>
           </label>
-          <button type="submit" class="btn btn-primary">Send Message ➜</button>
+          <button type="submit" class="btn btn-primary"><span>Send Message ➜</span></button>
         </form>
       </div>
     </section>
   </main>
 
-  <footer class="footer mono">
-    <p>Designed &amp; built by <span class="gradient-text">Mohammed Althaf</span> · © <span id="year"></span></p>
+  <footer class="footer">
+    <p class="mono">© <span id="year"></span> Mohammed Althaf. All rights reserved.</p>
+    <p class="credit">Designed &amp; Developed by <span class="grad-warm">Fahath Richvi</span></p>
   </footer>
 
   <script type="module" src="js/scene.js"></script>

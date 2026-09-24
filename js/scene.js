@@ -1,172 +1,390 @@
 import * as THREE from "three";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+
+const ORANGE = 0xff7a1a, AMBER = 0xffb13b, RED = 0xff2e4d, BLUE = 0x1f8fff, CYAN = 0x22d3ff;
+const BG = 0x030305;
+const BOARD_Y = -3;
+const TUNNEL_Z = -58;
 
 const canvas = document.getElementById("bg");
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const small = window.innerWidth < 820;
 
 let renderer;
 try {
-  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
 } catch (err) {
-  // No WebGL: the CSS grid background still works on its own
+  // No WebGL: the page still works over the plain black background
   console.warn("WebGL unavailable, skipping 3D scene", err);
 }
-
-if (renderer) init();
-
 function init() {
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  const rand = THREE.MathUtils.randFloat;
+  const randInt = THREE.MathUtils.randInt;
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, small ? 1.5 : 2));
   renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setClearColor(BG, 1);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x060812, 0.035);
+  scene.fog = new THREE.FogExp2(BG, 0.032);
 
-  const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
-  camera.position.set(0, 0, 9);
+  const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 200);
+  camera.position.set(0, 0.8, 10);
+
+  const glowTex = makeGlowTexture();
+  const ringTex = makeRingTexture();
 
   // ---------- Lights ----------
-  scene.add(new THREE.AmbientLight(0x2a4a60, 1.2));
-  const cyanLight = new THREE.PointLight(0x00f5a0, 60, 30);
-  cyanLight.position.set(5, 3, 5);
-  const pinkLight = new THREE.PointLight(0xffb547, 45, 30);
-  pinkLight.position.set(-5, -3, 3);
-  scene.add(cyanLight, pinkLight);
+  scene.add(new THREE.AmbientLight(0x2a2230, 0.8));
+  const rim = new THREE.DirectionalLight(0x6fa8ff, 1.1);
+  rim.position.set(-6, 5, 4);
+  scene.add(rim);
+  const warm = new THREE.PointLight(ORANGE, 40, 22, 1.6);
+  warm.position.set(6, 2, 5);
+  scene.add(warm);
 
-  // ---------- Core object ----------
-  const core = new THREE.Group();
-  scene.add(core);
+  // =====================================================
+  // 1. NEXUS CUBE — dark metal voxels around a red-hot core
+  // =====================================================
+  const nexus = new THREE.Group();
+  scene.add(nexus);
 
-  const inner = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(1.35, 1),
-    new THREE.MeshStandardMaterial({
-      color: 0x5b3fff,
-      emissive: 0x1d1080,
-      emissiveIntensity: 0.6,
-      metalness: 0.6,
-      roughness: 0.25,
-      flatShading: true,
-    })
-  );
-  core.add(inner);
-
-  const shell = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(1.95, 1),
-    new THREE.MeshBasicMaterial({ color: 0x00f5a0, wireframe: true, transparent: true, opacity: 0.35 })
-  );
-  core.add(shell);
-
-  // Glowing vertices on the shell
-  const vertPoints = new THREE.Points(
-    new THREE.IcosahedronGeometry(1.95, 1),
-    new THREE.PointsMaterial({ color: 0xb8ffe6, size: 0.08, transparent: true, opacity: 0.9 })
-  );
-  core.add(vertPoints);
-
-  // Orbit rings
-  const rings = [];
-  const ringColors = [0x00f5a0, 0x00d9f5, 0xffb547];
-  ringColors.forEach((color, i) => {
-    const ring = new THREE.Mesh(
-      new THREE.TorusGeometry(2.6 + i * 0.45, 0.012, 8, 160),
-      new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.55 })
-    );
-    ring.rotation.x = Math.PI / 2 + (i - 1) * 0.5;
-    ring.rotation.y = (i - 1) * 0.4;
-    core.add(ring);
-    rings.push(ring);
-  });
-
-  // Tech label sprites orbiting the core
-  const labels = ["</>", "{ }", "JS", "API", "SQL", "CSS", "UI", "Node"];
-  const orbiters = labels.map((text, i) => {
-    const sprite = new THREE.Sprite(
-      new THREE.SpriteMaterial({ map: makeLabelTexture(text, i), transparent: true, depthWrite: false })
-    );
-    sprite.scale.set(0.9, 0.45, 1);
-    const orbit = {
-      sprite,
-      radius: 3 + (i % 3) * 0.45,
-      speed: 0.25 + (i % 4) * 0.07,
-      offset: (i / labels.length) * Math.PI * 2,
-      tilt: (i % 2 ? 1 : -1) * (0.3 + (i % 3) * 0.2),
+  const voxelMat = new THREE.MeshStandardMaterial({ color: 0x17171d, metalness: 0.9, roughness: 0.32 });
+  const seamMat = new THREE.LineBasicMaterial({ color: RED, transparent: true, opacity: 0.55 });
+  const voxels = [];
+  const addVoxel = (pos, size) => {
+    const geo = new THREE.BoxGeometry(size, size, size);
+    const mesh = new THREE.Mesh(geo, voxelMat);
+    mesh.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), seamMat));
+    mesh.position.copy(pos);
+    mesh.userData = {
+      base: pos.clone(),
+      dir: pos.clone().normalize(),
+      axis: new THREE.Vector3(rand(-1, 1), rand(-1, 1), rand(-1, 1)).normalize(),
+      spin: rand(0.6, 2.2),
+      jitter: rand(0, Math.PI * 2),
     };
-    core.add(sprite);
-    return orbit;
+    nexus.add(mesh);
+    voxels.push(mesh);
+  };
+  const GAP = 0.7;
+  for (let x = -1; x <= 1; x++) {
+    for (let y = -1; y <= 1; y++) {
+      for (let z = -1; z <= 1; z++) {
+        if (x === 0 && y === 0 && z === 0) continue; // core lives here
+        if (x === 0 && y === 0 && z === 1) continue; // window onto the core
+        if (x === 1 && y === 1 && z === 1) continue; // broken corner
+        const p = new THREE.Vector3(x, y, z).multiplyScalar(GAP);
+        // some blocks are split into smaller "fractured" pieces
+        if (Math.random() < 0.3) {
+          for (let i = 0; i < 8; i++) {
+            const o = new THREE.Vector3(i & 1 ? 1 : -1, i & 2 ? 1 : -1, i & 4 ? 1 : -1).multiplyScalar(0.16);
+            if (Math.random() < 0.85) addVoxel(p.clone().add(o), 0.29);
+          }
+        } else {
+          addVoxel(p, 0.62);
+        }
+      }
+    }
+  }
+
+  const core = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.46, 0.46), new THREE.MeshBasicMaterial({ color: 0xff3b1f }));
+  nexus.add(core);
+  const coreWire = new THREE.LineSegments(
+    new THREE.EdgesGeometry(new THREE.BoxGeometry(0.66, 0.66, 0.66)),
+    new THREE.LineBasicMaterial({ color: AMBER })
+  );
+  nexus.add(coreWire);
+  const coreLight = new THREE.PointLight(0xff4a1a, 30, 7, 1.4);
+  nexus.add(coreLight);
+  const halo = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff3a1a, transparent: true, opacity: 0.55, blending: THREE.AdditiveBlending, depthWrite: false }));
+  halo.scale.setScalar(4.5);
+  nexus.add(halo);
+
+  // Orbit rings with travelling sparks
+  const orbits = [];
+  [
+    { rx: 3.1, ry: 2.1, color: RED, opacity: 0.7, rot: [1.15, 0.2, 0.35], speed: 0.35 },
+    { rx: 3.7, ry: 2.5, color: ORANGE, opacity: 0.4, rot: [1.35, -0.35, -0.5], speed: -0.22 },
+  ].forEach((o) => {
+    const group = new THREE.Group();
+    group.rotation.set(...o.rot);
+    const curve = new THREE.EllipseCurve(0, 0, o.rx, o.ry);
+    const line = new THREE.Line(
+      new THREE.BufferGeometry().setFromPoints(curve.getPoints(160)),
+      new THREE.LineBasicMaterial({ color: o.color, transparent: true, opacity: o.opacity })
+    );
+    group.add(line);
+    const sparks = [];
+    for (let i = 0; i < 3; i++) {
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: o.color, blending: THREE.AdditiveBlending, depthWrite: false }));
+      s.scale.setScalar(0.45);
+      s.userData.offset = i / 3;
+      group.add(s);
+      sparks.push(s);
+    }
+    nexus.add(group);
+    orbits.push({ group, curve, sparks, speed: o.speed });
   });
 
-  // Remember each core material's opacity so the whole core can fade out on scroll
-  const coreMaterials = [];
-  core.traverse((obj) => {
-    if (obj.material) {
-      obj.material.transparent = true;
-      coreMaterials.push({ mat: obj.material, base: obj.material.opacity });
+  // Holographic pedestal rings under the cube
+  const pedestal = new THREE.Group();
+  pedestal.position.y = -2.3;
+  pedestal.rotation.x = -Math.PI / 2;
+  [1.2, 1.7, 2.3].forEach((r, i) => {
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(r, r + 0.025, 96),
+      new THREE.MeshBasicMaterial({ color: i === 1 ? BLUE : ORANGE, transparent: true, opacity: 0.5 - i * 0.12, side: THREE.DoubleSide })
+    );
+    pedestal.add(ring);
+  });
+  nexus.add(pedestal);
+
+  // Embers drifting around the cube
+  const EMBERS = 140;
+  const emberPos = new Float32Array(EMBERS * 3);
+  const emberCol = new Float32Array(EMBERS * 3);
+  const emberSeed = [];
+  const warmCols = [new THREE.Color(RED), new THREE.Color(ORANGE), new THREE.Color(AMBER)];
+  for (let i = 0; i < EMBERS; i++) {
+    emberSeed.push({ r: rand(1.6, 4.8), a: rand(0, Math.PI * 2), y: rand(-2.5, 2.5), s: rand(0.1, 0.4) });
+    pick(warmCols).toArray(emberCol, i * 3);
+  }
+  const embers = new THREE.Points(
+    new THREE.BufferGeometry()
+      .setAttribute("position", new THREE.BufferAttribute(emberPos, 3))
+      .setAttribute("color", new THREE.BufferAttribute(emberCol, 3)),
+    new THREE.PointsMaterial({ size: 0.09, map: glowTex, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })
+  );
+  nexus.add(embers);
+
+  // =====================================================
+  // 2. CIRCUIT BOARD — traces, chips and travelling pulses
+  // =====================================================
+  const board = new THREE.Group();
+  board.position.y = BOARD_Y;
+  scene.add(board);
+
+  const plane = new THREE.Mesh(
+    new THREE.PlaneGeometry(120, 220),
+    new THREE.MeshStandardMaterial({ color: 0x07070b, metalness: 0.7, roughness: 0.75 })
+  );
+  plane.rotation.x = -Math.PI / 2;
+  plane.position.z = -70;
+  board.add(plane);
+
+  const STEP = 0.5;
+  const snap = (v) => Math.round(v / STEP) * STEP;
+  const traceColor = (x) => {
+    const t = x / 18;
+    let pool;
+    if (t < -0.15) pool = [ORANGE, AMBER, ORANGE, RED];
+    else if (t > 0.15) pool = [BLUE, CYAN, BLUE];
+    else pool = [RED, ORANGE, CYAN];
+    if (Math.random() < 0.15) pool = [RED, AMBER, CYAN, BLUE];
+    return new THREE.Color(pick(pool));
+  };
+  const nextDir = ([dx, dz]) => {
+    if (dx === 0) return [Math.random() < 0.5 ? 1 : -1, dz];            // straight -> diagonal
+    if (dz === 0) return [dx, Math.random() < 0.7 ? -1 : 1];
+    return Math.random() < 0.65 ? [0, dz] : [dx, 0];                     // diagonal -> straight
+  };
+
+  const traces = [];
+  const TRACE_COUNT = small ? 110 : 190;
+  for (let i = 0; i < TRACE_COUNT; i++) {
+    let x = snap(rand(-20, 20));
+    let z = snap(rand(-125, 14));
+    const pts = [new THREE.Vector3(x, 0.02, z)];
+    let dir = Math.random() < 0.7 ? [0, -1] : [Math.random() < 0.5 ? 1 : -1, 0];
+    const segs = randInt(3, 8);
+    for (let s = 0; s < segs; s++) {
+      const len = randInt(2, 10) * STEP;
+      x += dir[0] * len;
+      z += dir[1] * len;
+      pts.push(new THREE.Vector3(x, 0.02, z));
+      dir = nextDir(dir);
+    }
+    traces.push({ pts, color: traceColor(pts[0].x) });
+  }
+
+  // Chips with glowing edges and pins
+  const chipMat = new THREE.MeshStandardMaterial({ color: 0x0d0d13, metalness: 0.8, roughness: 0.4 });
+  const pinSegments = [];
+  const CHIP_COUNT = small ? 12 : 22;
+  for (let i = 0; i < CHIP_COUNT; i++) {
+    const w = rand(0.9, 2.6), d = rand(0.9, 2.6), h = rand(0.12, 0.3);
+    const cx = snap(rand(-16, 16));
+    const cz = snap(rand(-110, 6));
+    if (Math.abs(cx) < 2.5 && cz > -8) continue; // keep the hero sightline clear
+    const col = new THREE.Color(pick([ORANGE, BLUE, RED, CYAN, AMBER]));
+    const geo = new THREE.BoxGeometry(w, h, d);
+    const chip = new THREE.Mesh(geo, chipMat);
+    chip.position.set(cx, h / 2, cz);
+    chip.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: col })));
+    if (Math.random() < 0.35) {
+      const top = new THREE.Mesh(
+        new THREE.PlaneGeometry(w * 0.7, d * 0.7),
+        new THREE.MeshBasicMaterial({ color: col, transparent: true, opacity: 0.55 })
+      );
+      top.rotation.x = -Math.PI / 2;
+      top.position.y = h / 2 + 0.01;
+      chip.add(top);
+    }
+    board.add(chip);
+    // pins along each edge
+    for (let px = -w / 2 + 0.15; px < w / 2 - 0.1; px += 0.22) {
+      pinSegments.push([new THREE.Vector3(cx + px, 0.02, cz - d / 2), new THREE.Vector3(cx + px, 0.02, cz - d / 2 - 0.25), col]);
+      pinSegments.push([new THREE.Vector3(cx + px, 0.02, cz + d / 2), new THREE.Vector3(cx + px, 0.02, cz + d / 2 + 0.25), col]);
+    }
+    for (let pz = -d / 2 + 0.15; pz < d / 2 - 0.1; pz += 0.22) {
+      pinSegments.push([new THREE.Vector3(cx - w / 2, 0.02, cz + pz), new THREE.Vector3(cx - w / 2 - 0.25, 0.02, cz + pz), col]);
+      pinSegments.push([new THREE.Vector3(cx + w / 2, 0.02, cz + pz), new THREE.Vector3(cx + w / 2 + 0.25, 0.02, cz + pz), col]);
+    }
+    // a soft glow pooled on the board under some chips
+    if (Math.random() < 0.5) {
+      const g = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: col, transparent: true, opacity: 0.35, blending: THREE.AdditiveBlending, depthWrite: false }));
+      g.position.set(cx, 0.3, cz);
+      g.scale.setScalar(Math.max(w, d) * 2.2);
+      board.add(g);
+    }
+  }
+
+  // All traces + pins as one LineSegments draw call
+  const linePos = [];
+  const lineCol = [];
+  const dim = 0.55;
+  traces.forEach(({ pts, color }) => {
+    for (let i = 0; i < pts.length - 1; i++) {
+      linePos.push(...pts[i].toArray(), ...pts[i + 1].toArray());
+      for (let k = 0; k < 2; k++) lineCol.push(color.r * dim, color.g * dim, color.b * dim);
     }
   });
+  pinSegments.forEach(([a, b, c]) => {
+    linePos.push(...a.toArray(), ...b.toArray());
+    for (let k = 0; k < 2; k++) lineCol.push(c.r * 0.7, c.g * 0.7, c.b * 0.7);
+  });
+  const traceGeo = new THREE.BufferGeometry();
+  traceGeo.setAttribute("position", new THREE.Float32BufferAttribute(linePos, 3));
+  traceGeo.setAttribute("color", new THREE.Float32BufferAttribute(lineCol, 3));
+  board.add(new THREE.LineSegments(traceGeo, new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.9 })));
 
-  // Small floating shapes around the scene
-  const shapes = [];
-  const shapeGeos = [
-    new THREE.OctahedronGeometry(0.22),
-    new THREE.TetrahedronGeometry(0.25),
-    new THREE.BoxGeometry(0.28, 0.28, 0.28),
-    new THREE.TorusGeometry(0.18, 0.06, 8, 24),
+  // Pads at trace ends
+  const padPos = [];
+  const padCol = [];
+  traces.forEach(({ pts, color }) => {
+    [pts[0], pts[pts.length - 1]].forEach((p) => {
+      padPos.push(p.x, 0.03, p.z);
+      padCol.push(color.r, color.g, color.b);
+    });
+  });
+  const padGeo = new THREE.BufferGeometry();
+  padGeo.setAttribute("position", new THREE.Float32BufferAttribute(padPos, 3));
+  padGeo.setAttribute("color", new THREE.Float32BufferAttribute(padCol, 3));
+  board.add(new THREE.Points(padGeo, new THREE.PointsMaterial({ size: 0.32, map: ringTex, vertexColors: true, transparent: true, depthWrite: false })));
+
+  // Pulses of light running along the traces
+  const pulses = traces
+    .filter((t) => t.pts.length > 2)
+    .slice(0, small ? 60 : 110)
+    .map(({ pts, color }) => {
+      const cum = [0];
+      for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + pts[i].distanceTo(pts[i - 1]));
+      const bright = color.clone().lerp(new THREE.Color(0xffffff), 0.35);
+      return { pts, cum, total: cum[cum.length - 1], offset: Math.random(), speed: rand(1.5, 4.5), color: bright };
+    });
+  const pulsePos = new Float32Array(pulses.length * 3);
+  const pulseCol = new Float32Array(pulses.length * 3);
+  pulses.forEach((p, i) => p.color.toArray(pulseCol, i * 3));
+  const pulseGeo = new THREE.BufferGeometry();
+  pulseGeo.setAttribute("position", new THREE.BufferAttribute(pulsePos, 3));
+  pulseGeo.setAttribute("color", new THREE.BufferAttribute(pulseCol, 3));
+  board.add(new THREE.Points(pulseGeo, new THREE.PointsMaterial({ size: 0.42, map: glowTex, vertexColors: true, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false })));
+
+  // =====================================================
+  // 3. FLOATING CODE WALLS + BOKEH
+  // =====================================================
+  const palettes = [
+    ["#ff7a1a", "#ffb13b", "#ff2e4d", "#ffd9a8"],
+    ["#1f8fff", "#22d3ff", "#9fd8ff", "#6c7bff"],
+    ["#22d3ff", "#ff2e8a", "#7dff6a", "#ffb13b", "#b06cff", "#ff4a2a"],
   ];
-  for (let i = 0; i < 26; i++) {
-    const mesh = new THREE.Mesh(
-      shapeGeos[i % shapeGeos.length],
-      new THREE.MeshStandardMaterial({
-        color: ringColors[i % 3],
-        emissive: ringColors[i % 3],
-        emissiveIntensity: 0.35,
-        metalness: 0.5,
-        roughness: 0.3,
-        wireframe: i % 3 === 0,
-      })
+  const codeTextures = palettes.map((p) => makeCodeTexture(p));
+  const codeWalls = [];
+  const WALLS = small ? 8 : 12;
+  for (let i = 0; i < WALLS; i++) {
+    const left = i % 2 === 0;
+    const tex = codeTextures[left ? (i % 4 === 0 ? 0 : 2) : (i % 4 === 1 ? 1 : 2)];
+    const wall = new THREE.Mesh(
+      new THREE.PlaneGeometry(7, 7),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide })
     );
-    mesh.position.set(
-      THREE.MathUtils.randFloatSpread(22),
-      THREE.MathUtils.randFloatSpread(40) - 8,
-      THREE.MathUtils.randFloat(-8, 2)
-    );
-    mesh.userData = {
-      rot: new THREE.Vector3(Math.random() * 0.02, Math.random() * 0.02, 0),
-      floatOffset: Math.random() * Math.PI * 2,
-      baseY: mesh.position.y,
-    };
-    scene.add(mesh);
-    shapes.push(mesh);
+    wall.position.set(left ? rand(-10.5, -8.5) : rand(8.5, 10.5), rand(0, 1.5), -14 - i * 4);
+    wall.rotation.y = left ? 0.95 : -0.95;
+    wall.userData.baseY = wall.position.y;
+    scene.add(wall);
+    codeWalls.push(wall);
   }
 
-  // ---------- Starfield ----------
-  const STAR_COUNT = window.innerWidth < 700 ? 1200 : 2600;
-  const starPositions = new Float32Array(STAR_COUNT * 3);
-  const starColors = new Float32Array(STAR_COUNT * 3);
-  const palette = [new THREE.Color(0x00f5a0), new THREE.Color(0x00d9f5), new THREE.Color(0x7c5cff), new THREE.Color(0xffffff)];
-  for (let i = 0; i < STAR_COUNT; i++) {
-    const r = THREE.MathUtils.randFloat(8, 60);
-    const theta = Math.random() * Math.PI * 2;
-    const phi = Math.acos(THREE.MathUtils.randFloatSpread(2));
-    starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
-    starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
-    starPositions[i * 3 + 2] = r * Math.cos(phi) - 10;
-    const c = palette[i % palette.length];
-    starColors.set([c.r, c.g, c.b], i * 3);
-  }
-  const starGeo = new THREE.BufferGeometry();
-  starGeo.setAttribute("position", new THREE.BufferAttribute(starPositions, 3));
-  starGeo.setAttribute("color", new THREE.BufferAttribute(starColors, 3));
-  const stars = new THREE.Points(
-    starGeo,
-    new THREE.PointsMaterial({
-      size: 0.09,
-      vertexColors: true,
-      transparent: true,
-      opacity: 0.85,
-      map: makeDotTexture(),
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-    })
+  // Out-of-focus bokeh: warm on the left, cool on the right
+  const makeBokeh = (count, xMin, xMax, color) => {
+    const pos = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      pos.set([rand(xMin, xMax), rand(-2, 7), rand(-110, 4)], i * 3);
+    }
+    const pts = new THREE.Points(
+      new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(pos, 3)),
+      new THREE.PointsMaterial({ size: 0.9, map: glowTex, color, transparent: true, opacity: 0.45, blending: THREE.AdditiveBlending, depthWrite: false })
+    );
+    scene.add(pts);
+    return pts;
+  };
+  const bokehWarm = makeBokeh(small ? 90 : 160, -26, -3, ORANGE);
+  const bokehCool = makeBokeh(small ? 90 : 160, 3, 26, BLUE);
+
+  // Distant star dust
+  const DUST = 900;
+  const dustPos = new Float32Array(DUST * 3);
+  for (let i = 0; i < DUST; i++) dustPos.set([rand(-60, 60), rand(-5, 40), rand(-150, 10)], i * 3);
+  scene.add(new THREE.Points(
+    new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(dustPos, 3)),
+    new THREE.PointsMaterial({ size: 0.06, color: 0xffffff, transparent: true, opacity: 0.5, depthWrite: false })
+  ));
+
+  // =====================================================
+  // 4. CODE WORMHOLE at the end of the flight
+  // =====================================================
+  const tunnelTex = makeCodeTexture(palettes[2].concat(palettes[0]));
+  tunnelTex.wrapS = tunnelTex.wrapT = THREE.RepeatWrapping;
+  tunnelTex.repeat.set(4, 3);
+  const tunnelMat = new THREE.MeshBasicMaterial({ map: tunnelTex, side: THREE.BackSide, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false });
+  const tunnel = new THREE.Mesh(new THREE.CylinderGeometry(4.2, 1.2, 50, 48, 1, true), tunnelMat);
+  tunnel.rotation.x = Math.PI / 2;
+  tunnel.position.set(0, 0.4, TUNNEL_Z - 25);
+  scene.add(tunnel);
+  const mouth = new THREE.Mesh(
+    new THREE.TorusGeometry(4.3, 0.07, 12, 120),
+    new THREE.MeshBasicMaterial({ color: ORANGE, transparent: true, opacity: 0, fog: false })
   );
-  scene.add(stars);
+  mouth.position.set(0, 0.4, TUNNEL_Z);
+  scene.add(mouth);
+  const mouthGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: 0xff5a1a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  mouthGlow.scale.setScalar(16);
+  mouthGlow.position.copy(mouth.position);
+  scene.add(mouthGlow);
+
+  // =====================================================
+  // Post-processing: bloom makes everything glow
+  // =====================================================
+  const composer = new EffectComposer(renderer);
+  composer.addPass(new RenderPass(scene, camera));
+  const bloom = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.85, 0.5, 0.15);
+  composer.addPass(bloom);
+  composer.addPass(new OutputPass());
 
   // ---------- Interaction ----------
   const mouse = new THREE.Vector2();
@@ -177,132 +395,210 @@ function init() {
   });
 
   let scrollProgress = 0;
-  let heroProgress = 0; // 0 while on hero, 1 once scrolled one screen down
+  let heroProgress = 0;
   const onScroll = () => {
     const max = document.documentElement.scrollHeight - window.innerHeight;
-    scrollProgress = max > 0 ? window.scrollY / max : 0;
+    scrollProgress = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
     heroProgress = Math.min(window.scrollY / window.innerHeight, 1);
   };
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
-  // Place core to the right of hero text on wide screens, centred & smaller on phones
-  let coreBaseX = 0;
-  let coreBaseY = 0;
-  let coreBaseZ = 0;
-  let coreScale = 1;
+  const nexusBase = new THREE.Vector3();
+  let nexusScale = 1;
   const layout = () => {
-    const w = window.innerWidth;
-    camera.aspect = w / window.innerHeight;
+    const w = window.innerWidth, h = window.innerHeight;
+    camera.aspect = w / h;
     camera.updateProjectionMatrix();
-    renderer.setSize(w, window.innerHeight);
-    if (w > 1080) { coreBaseX = 3.4; coreBaseY = 0; coreBaseZ = 0; coreScale = 1; }
-    else if (w > 820) { coreBaseX = 2.6; coreBaseY = 0; coreBaseZ = 0; coreScale = 0.85; }
-    else { coreBaseX = 1.2; coreBaseY = 2.6; coreBaseZ = -6; coreScale = 0.8; }
+    renderer.setSize(w, h);
+    composer.setSize(w, h);
+    if (w > 1080) { nexusBase.set(3.3, 0.5, 0); nexusScale = 1; }
+    else if (w > 820) { nexusBase.set(2.5, 0.5, 0); nexusScale = 0.85; }
+    else { nexusBase.set(0.4, 3.3, -1.5); nexusScale = 0.5; }
   };
   window.addEventListener("resize", layout);
   layout();
 
   // ---------- Loop ----------
   const clock = new THREE.Clock();
-  const tick = () => {
-    const t = clock.getElapsedTime();
-    const speed = reduceMotion ? 0.15 : 1;
+  const lookAt = new THREE.Vector3();
+  const tmp = new THREE.Vector3();
 
-    // smooth mouse follow
+  const tick = () => {
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.elapsedTime;
+    const speed = reduceMotion ? 0.15 : 1;
     target.lerp(mouse, 0.05);
 
-    // Core: sits beside hero text, then recedes into the fog behind the content
     const sp = scrollProgress;
     const hp = THREE.MathUtils.smoothstep(heroProgress, 0, 1);
-    core.position.x = coreBaseX * (1 + hp * 0.5);
-    core.position.y = coreBaseY + Math.sin(t * 0.8) * 0.15 * speed + hp * 0.5;
-    core.position.z = coreBaseZ - hp * 9;
-    core.scale.setScalar(coreScale);
-    const fade = 1 - hp * 0.7;
-    coreMaterials.forEach(({ mat, base }) => { mat.opacity = base * fade; });
-    core.rotation.y = t * 0.15 * speed + sp * Math.PI * 2 + target.x * 0.5;
-    core.rotation.x = target.y * 0.4 + sp * Math.PI;
 
-    inner.rotation.x = t * 0.3 * speed;
-    inner.rotation.z = t * 0.2 * speed;
-    inner.scale.setScalar(1 + Math.sin(t * 2) * 0.04);
-    shell.rotation.y = -t * 0.2 * speed;
-    vertPoints.rotation.y = shell.rotation.y;
+    // Camera flies forward over the board as the page scrolls
+    const camZ = 10 - sp * (10 - TUNNEL_Z + 4);
+    camera.position.x += (target.x * 0.9 + Math.sin(sp * Math.PI * 2) * 1.2 - camera.position.x) * 0.06;
+    camera.position.y += (0.8 - sp * 0.3 - target.y * 0.45 - camera.position.y) * 0.06;
+    camera.position.z += (camZ - camera.position.z) * 0.08;
+    lookAt.set(camera.position.x * 0.4, -0.5 + sp * 0.8, camera.position.z - 12);
+    camera.lookAt(lookAt);
 
-    rings.forEach((ring, i) => { ring.rotation.z = t * (0.2 + i * 0.1) * (i % 2 ? -1 : 1) * speed; });
-
-    orbiters.forEach((o) => {
-      const a = t * o.speed * speed + o.offset;
-      o.sprite.position.set(Math.cos(a) * o.radius, Math.sin(a) * o.radius * o.tilt, Math.sin(a) * o.radius);
+    // Nexus: breathes, then breaks apart as you leave the hero
+    nexus.position.copy(nexusBase);
+    nexus.position.y += Math.sin(t * 0.9) * 0.15 * speed;
+    nexus.scale.setScalar(nexusScale);
+    nexus.rotation.y = t * 0.25 * speed + target.x * 0.6;
+    nexus.rotation.x = 0.35 + target.y * 0.3;
+    const breathe = (Math.sin(t * 1.6 * speed) + 1) * 0.04;
+    voxels.forEach((v) => {
+      const u = v.userData;
+      const burst = hp * (2.4 + Math.sin(u.jitter) * 0.8);
+      v.position.copy(u.base).addScaledVector(u.dir, breathe + burst);
+      v.rotation.set(0, 0, 0);
+      v.rotateOnAxis(u.axis, hp * u.spin * 2 + Math.sin(t + u.jitter) * 0.03);
     });
+    seamMat.opacity = 0.45 + Math.sin(t * 2.2) * 0.15;
+    core.rotation.set(t * 0.8 * speed, t * 1.1 * speed, 0);
+    coreWire.rotation.set(-t * 0.5 * speed, -t * 0.7 * speed, 0);
+    const pulse = 1 + Math.sin(t * 3) * 0.08;
+    core.scale.setScalar(pulse);
+    halo.material.opacity = 0.45 + Math.sin(t * 3) * 0.12;
+    coreLight.intensity = 26 + Math.sin(t * 3) * 6;
 
-    shapes.forEach((m) => {
-      m.rotation.x += m.userData.rot.x * speed;
-      m.rotation.y += m.userData.rot.y * speed;
-      m.position.y = m.userData.baseY + Math.sin(t + m.userData.floatOffset) * 0.3 + sp * 30;
+    orbits.forEach((o) => {
+      o.group.rotation.z += o.speed * dt * speed;
+      o.sparks.forEach((s) => {
+        const u = (s.userData.offset + t * 0.08 * speed) % 1;
+        const p = o.curve.getPoint(u);
+        s.position.set(p.x, p.y, 0);
+      });
     });
+    pedestal.rotation.z = t * 0.3 * speed;
 
-    stars.rotation.y = t * 0.01 * speed + sp * 0.6;
-    stars.rotation.x = sp * 0.3;
+    const ep = embers.geometry.attributes.position.array;
+    emberSeed.forEach((e, i) => {
+      const a = e.a + t * e.s * speed;
+      const y = ((e.y + t * e.s * 0.6 * speed + 2.5) % 5) - 2.5;
+      ep[i * 3] = Math.cos(a) * e.r;
+      ep[i * 3 + 1] = y;
+      ep[i * 3 + 2] = Math.sin(a) * e.r;
+    });
+    embers.geometry.attributes.position.needsUpdate = true;
 
-    // camera parallax
-    camera.position.x += (target.x * 0.8 - camera.position.x) * 0.05;
-    camera.position.y += (-target.y * 0.5 - camera.position.y) * 0.05;
-    camera.lookAt(0, 0, 0);
+    // Pulses along traces
+    pulses.forEach((p, i) => {
+      let d = ((p.offset * p.total + t * p.speed * speed) % p.total);
+      let k = 1;
+      while (k < p.cum.length - 1 && p.cum[k] < d) k++;
+      const segLen = p.cum[k] - p.cum[k - 1] || 1;
+      tmp.lerpVectors(p.pts[k - 1], p.pts[k], (d - p.cum[k - 1]) / segLen);
+      pulsePos[i * 3] = tmp.x;
+      pulsePos[i * 3 + 1] = 0.06;
+      pulsePos[i * 3 + 2] = tmp.z;
+    });
+    pulseGeo.attributes.position.needsUpdate = true;
 
-    cyanLight.position.x = Math.sin(t * 0.5) * 6;
-    pinkLight.position.y = Math.cos(t * 0.4) * 5;
+    codeWalls.forEach((w, i) => { w.position.y = w.userData.baseY + Math.sin(t * 0.5 + i) * 0.25; });
+    bokehWarm.rotation.y = Math.sin(t * 0.05) * 0.02;
+    bokehCool.rotation.y = -Math.sin(t * 0.05) * 0.02;
 
-    renderer.render(scene, camera);
+    // Wormhole fades in over the last part of the page
+    const endP = THREE.MathUtils.smoothstep(sp, 0.55, 1);
+    tunnelMat.opacity = endP * 0.85;
+    mouth.material.opacity = endP;
+    mouthGlow.material.opacity = endP * 0.5;
+    tunnelTex.offset.y -= dt * 0.06 * speed;
+    tunnel.rotation.y = t * 0.1 * speed;
+    mouth.rotation.z = t * 0.2;
+
+    warm.position.x = 6 + Math.sin(t * 0.4) * 3;
+    warm.position.z = camera.position.z - 5;
+
+    composer.render();
     requestAnimationFrame(tick);
   };
   tick();
 }
 
-function makeLabelTexture(text, i) {
+// ---------- Texture helpers ----------
+function makeGlowTexture() {
   const c = document.createElement("canvas");
-  c.width = 256; c.height = 128;
+  c.width = c.height = 128;
   const ctx = c.getContext("2d");
-  const colors = ["#00f5a0", "#00d9f5", "#ffb547"];
-  const col = colors[i % 3];
-  ctx.fillStyle = "rgba(12, 17, 34, 0.78)";
-  roundRect(ctx, 8, 24, 240, 80, 22);
-  ctx.fill();
-  ctx.lineWidth = 3;
-  ctx.strokeStyle = col;
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, "rgba(255,255,255,1)");
+  g.addColorStop(0.2, "rgba(255,255,255,0.7)");
+  g.addColorStop(0.5, "rgba(255,255,255,0.18)");
+  g.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+
+function makeRingTexture() {
+  const c = document.createElement("canvas");
+  c.width = c.height = 64;
+  const ctx = c.getContext("2d");
+  ctx.strokeStyle = "#fff";
+  ctx.lineWidth = 9;
+  ctx.beginPath();
+  ctx.arc(32, 32, 22, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.font = "600 44px 'JetBrains Mono', monospace";
-  ctx.fillStyle = "#ffffff";
-  ctx.shadowColor = col;
-  ctx.shadowBlur = 18;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(text, 128, 66);
+  return new THREE.CanvasTexture(c);
+}
+
+const CODE_LINES = [
+  "import React, { useState, useEffect } from 'react';",
+  "const app = express();",
+  "app.use(express.json());",
+  "app.get('/api/users', auth, async (req, res) => {",
+  "  const users = await db.query('SELECT * FROM users');",
+  "  res.json(users);",
+  "});",
+  "router.post('/booking', validate, createBooking);",
+  "await mongoose.connect(process.env.MONGO_URI);",
+  "if (!token) return res.status(401).json({ error });",
+  "const role = user.isAdmin ? 'admin' : 'user';",
+  "jwt.sign({ id: user.id }, SECRET, { expiresIn: '1d' });",
+  "export default function Dashboard({ data }) {",
+  "  const [cart, setCart] = useState([]);",
+  "  useEffect(() => { fetchOrders(); }, []);",
+  "  return <Chart data={data} type=\"bar\" />;",
+  "SELECT id, name, price FROM products WHERE stock > 0;",
+  "INSERT INTO appointments (user_id, slot) VALUES (?, ?);",
+  ".grid { display: grid; grid-template-columns: repeat(3, 1fr); }",
+  "@media (max-width: 768px) { .nav { flex-direction: column; } }",
+  "for (const item of cart) total += item.price * item.qty;",
+  "git commit -m \"feat: add admin panel\"",
+  "npm run build && npm start",
+  "<section class=\"hero\"><h1>Hello World</h1></section>",
+  "const slots = calendar.filter(s => !s.booked);",
+  "fetch('/api/products').then(r => r.json()).then(render);",
+  "function toCode(idea) { return idea.split('').map(build); }",
+];
+
+function makeCodeTexture(palette) {
+  const c = document.createElement("canvas");
+  c.width = c.height = 1024;
+  const ctx = c.getContext("2d");
+  ctx.textBaseline = "top";
+  let y = 10;
+  while (y < 1010) {
+    const size = Math.random() < 0.12 ? 44 : Math.random() < 0.5 ? 26 : 20;
+    const blur = size > 40 ? 3 : Math.random() < 0.25 ? 1.5 : 0;
+    ctx.filter = blur ? `blur(${blur}px)` : "none";
+    ctx.font = `600 ${size}px "JetBrains Mono", monospace`;
+    ctx.globalAlpha = 0.45 + Math.random() * 0.55;
+    const col = palette[Math.floor(Math.random() * palette.length)];
+    ctx.fillStyle = col;
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 12;
+    const line = CODE_LINES[Math.floor(Math.random() * CODE_LINES.length)];
+    ctx.fillText(line, 10 + Math.floor(Math.random() * 6) * 24, y);
+    y += size * 1.45;
+  }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   return tex;
 }
 
-function makeDotTexture() {
-  const c = document.createElement("canvas");
-  c.width = c.height = 64;
-  const ctx = c.getContext("2d");
-  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-  g.addColorStop(0, "rgba(255,255,255,1)");
-  g.addColorStop(0.3, "rgba(255,255,255,0.6)");
-  g.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 64, 64);
-  return new THREE.CanvasTexture(c);
-}
-
-function roundRect(ctx, x, y, w, h, r) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
+// Start once every helper and constant above is defined
+if (renderer) init();

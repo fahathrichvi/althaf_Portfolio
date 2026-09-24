@@ -40,7 +40,12 @@
       navLinks.classList.remove("open");
     })
   );
-  const onScroll = () => nav.classList.toggle("scrolled", window.scrollY > 40);
+  // Dim the 3D scene behind the content once the hero is scrolled past
+  const scrim = document.getElementById("scrim");
+  const onScroll = () => {
+    nav.classList.toggle("scrolled", window.scrollY > 40);
+    scrim.style.opacity = Math.min(window.scrollY / window.innerHeight, 1) * 0.9;
+  };
   window.addEventListener("scroll", onScroll, { passive: true });
   onScroll();
 
