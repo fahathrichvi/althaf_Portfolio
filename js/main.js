@@ -35,16 +35,15 @@
   const nav = document.getElementById("nav");
   const menuBtn = document.getElementById("menuBtn");
   const navLinks = document.getElementById("navLinks");
-  menuBtn.addEventListener("click", () => {
-    menuBtn.classList.toggle("open");
-    navLinks.classList.toggle("open");
-  });
-  navLinks.querySelectorAll("a").forEach((a) =>
-    a.addEventListener("click", () => {
-      menuBtn.classList.remove("open");
-      navLinks.classList.remove("open");
-    })
-  );
+  const setMenu = (open) => {
+    menuBtn.classList.toggle("open", open);
+    navLinks.classList.toggle("open", open);
+    menuBtn.setAttribute("aria-expanded", open);
+    document.body.classList.toggle("menu-open", open); // stops the page scrolling behind the menu
+  };
+  menuBtn.addEventListener("click", () => setMenu(!navLinks.classList.contains("open")));
+  navLinks.querySelectorAll("a").forEach((a) => a.addEventListener("click", () => setMenu(false)));
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") setMenu(false); });
   // Dim the 3D scene behind the content once the hero is scrolled past
   const scrim = document.getElementById("scrim");
   const onScroll = () => {
