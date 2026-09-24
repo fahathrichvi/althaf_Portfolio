@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mohammed Althaf | Full-Stack Developer</title>
+  <meta name="description" content="Mohammed Althaf — Full-Stack Developer, Frontend Developer and UI/UX Designer based in Doha, Qatar. Building responsive, scalable web applications." />
+  <meta name="theme-color" content="#05060f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+    { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js" } }
+  </script>
+</head>
+<body>
+  <!-- Loader -->
+  <div class="loader" id="loader">
+    <div class="loader-cube">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <p class="mono">&lt;loading portfolio /&gt;</p>
+  </div>
+
+  <!-- 3D background -->
+  <canvas id="bg"></canvas>
+  <div class="grid-overlay" aria-hidden="true"></div>
+  <div class="cursor-glow" id="cursorGlow" aria-hidden="true"></div>
+
+  <!-- Nav -->
+  <header class="nav" id="nav">
+    <a href="#home" class="logo mono">&lt;<span>MA</span> /&gt;</a>
+    <nav>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#about">About</a></li>
+        <li><a href="#skills">Skills</a></li>
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#education">Education</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+    <button class="menu-btn" id="menuBtn" aria-label="Toggle menu"><span></span><span></span></button>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero" id="home">
+      <div class="hero-content">
+        <p class="eyebrow mono reveal">// Hello World, I'm</p>
+        <h1 class="hero-title reveal">
+          <span class="line">Mohammed</span>
+          <span class="line gradient-text">Althaf</span>
+        </h1>
+        <p class="hero-role mono reveal">
+          <span class="prompt">&gt;</span> <span id="typed"></span><span class="caret">_</span>
+        </p>
+        <p class="hero-text reveal">
+          I build responsive, user-friendly web applications — from pixel-perfect interfaces
+          to secure backend APIs and databases.
+        </p>
+        <div class="hero-cta reveal">
+          <a href="#projects" class="btn btn-primary">View My Work</a>
+          <a href="assets/Mohammed_Althaf_CV.pdf" class="btn btn-ghost" download>Download CV</a>
+        </div>
+        <div class="hero-meta mono reveal">
+          <span><i class="dot"></i> Available for opportunities</span>
+          <span>📍 Doha, Qatar</span>
+        </div>
+      </div>
+      <a href="#about" class="scroll-hint" aria-label="Scroll down">
+        <span class="mouse"><span class="wheel"></span></span>
+      </a>
+    </section>
+
+    <!-- About -->
+    <section class="section" id="about">
+      <div class="section-head reveal">
+        <span class="section-num mono">01.</span>
+        <h2>About Me</h2>
+        <span class="section-line"></span>
+      </div>
+      <div class="about-grid">
+        <div class="about-photo reveal tilt">
+          <div class="photo-frame">
+            <img src="assets/profile.jpg" alt="Mohammed Althaf" onerror="this.remove()" />
+            <span class="photo-fallback">MA</span>
+          </div>
+          <div class="photo-orbit"><span></span></div>
+        </div>
+        <div class="about-text reveal">
+          <p>
+            I'm a <strong>motivated Full-Stack Developer</strong> with experience building responsive,
+            user-friendly web applications across frontend and backend development.
+          </p>
+          <p>
+            I work with HTML, CSS, JavaScript, RESTful APIs, backend services, database integration and
+            modern UI/UX principles. I've developed <strong>multi-user SaaS and E-commerce applications</strong>
+            with authentication, role-based access control and responsive interfaces.
+          </p>
+          <p>
+            I'm passionate about building reliable, scalable and user-centred web solutions — and I keep
+            sharpening my skills through real-world projects.
+          </p>
+          <div class="stats">
+            <div class="stat"><span class="stat-num" data-count="5">0</span><span class="stat-plus">+</span><p>Projects Built</p></div>
+            <div class="stat"><span class="stat-num" data-count="4">0</span><p>Tech Domains</p></div>
+            <div class="stat"><span class="stat-num" data-count="2">0</span><p>Languages Spoken</p></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills -->
+    <section class="section" id="skills">
+      <div class="section-head reveal">
+        <span class="section-num mono">02.</span>
+        <h2>Technical Skills</h2>
+        <span class="section-line"></span>
+      </div>
+      <div class="skills-grid">
+        <article class="skill-card reveal tilt">
+          <div class="card-glare"></div>
+          <div class="skill-icon">&lt;/&gt;</div>
+          <h3>Frontend</h3>
+          <ul class="chips">
+            <li>HTML5</li><li>CSS3</li><li>JavaScript ES6+</li><li>React</li>
+            <li>Responsive Design</li><li>Flexbox</li><li>CSS Grid</li><li>Animations</li>
+          </ul>
+        </article>
+        <article class="skill-card reveal tilt">
+          <div class="card-glare"></div>
+          <div class="skill-icon">{ }</div>
+          <h3>Backend &amp; APIs</h3>
+          <ul class="chips">
+            <li>Node.js</li><li>Express.js</li><li>RESTful APIs</li>
+            <li>Authentication</li><li>Authorization</li><li>Frontend–Backend Integration</li>
+          </ul>
+        </article>
+        <article class="skill-card reveal tilt">
+          <div class="card-glare"></div>
+          <div class="skill-icon">⛁</div>
+          <h3>Database</h3>
+          <ul class="chips">
+            <li>MySQL</li><li>MongoDB</li><li>SQL</li><li>CRUD Operations</li>
+          </ul>
+        </article>
+        <article class="skill-card reveal tilt">
+          <div class="card-glare"></div>
+          <div class="skill-icon">◈</div>
+          <h3>UI/UX &amp; Tools</h3>
+          <ul class="chips">
+            <li>Figma</li><li>Wireframes</li><li>Prototypes</li><li>Components</li>
+            <li>Design Systems</li><li>Git</li><li>GitHub</li>
+          </ul>
+        </article>
+      </div>
+
+      <!-- Tech marquee -->
+      <div class="marquee" aria-hidden="true">
+        <div class="marquee-track mono">
+          <span>HTML5</span><span>CSS3</span><span>JavaScript</span><span>React</span><span>Node.js</span><span>Express</span><span>MySQL</span><span>MongoDB</span><span>REST APIs</span><span>Figma</span><span>Git</span><span>GitHub</span>
+          <span>HTML5</span><span>CSS3</span><span>JavaScript</span><span>React</span><span>Node.js</span><span>Express</span><span>MySQL</span><span>MongoDB</span><span>REST APIs</span><span>Figma</span><span>Git</span><span>GitHub</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Projects -->
+    <section class="section" id="projects">
+      <div class="section-head reveal">
+        <span class="section-num mono">03.</span>
+        <h2>Featured Projects</h2>
+        <span class="section-line"></span>
+      </div>
+      <p class="section-sub mono reveal">NTC-KDMC-NENASALA · Kalmunai, Sri Lanka · 2024 – 2026</p>
+
+      <div class="projects-grid">
+        <article class="project-card reveal tilt">
+          <div class="card-glare"></div>
+          <div class="project-visual v-ecom"><span class="project-emoji">🛒</span></div>
+          <div class="project-body">
+            <span class="project-num mono">01</span>
+            <h3>E-Commerce Platform</h3>
+            <ul class="project-points">
+              <li>Developed a responsive web application</li>
+              <li>Implemented key features with a clean UI</li>
+              <li>Improved functionality and performance</li>
+            </ul>
+            <ul class="tech mono"><li>HTML</li><li>CSS</li><li>JavaScript</li><li>React</li><li>Node.js</li><li>MySQL</li></ul>
+          </div>
+        </article>
+
+        <article class="project-card reveal tilt">
+          <div class="card-glare"></div>
+          <div class="project-visual v-biz"><span class="project-emoji">🏢</span></div>
+          <div class="project-body">
+            <span class="project-num mono">02</span>
+            <h3>Business Website</h3>
+            <ul class="project-points">
+              <li>Built a modern, responsive business website</li>
+              <li>Added key sections with smooth navigation</li>
+              <li>Optimized for performance and compatibility</li>
+            </ul>
+            <ul class="tech mono"><li>HTML</li><li>CSS</li><li>JavaScript</li><li>React</li><li>Node.js</li><li>MongoDB</li></ul>
+          </div>
+        </article>
+
+        <article class="project-card reveal tilt">
+          <div class="card-glare"></div>
+          <div class="project-visual v-dash"><span class="project-emoji">📊</span></div>
+          <div class="project-body">
+            <span class="project-num mono">03</span>
+            <h3>Admin Dashboard</h3>
+            <ul class="project-points">
+              <li>Developed a dashboard with charts and tables</li>
+              <li>Implemented secure login and role-based access</li>
+              <li>Designed a clean, responsive UI</li>
+            </ul>
+            <ul class="tech mono"><li>React</li><li>Node.js</li><li>Express.js</li><li>MySQL</li></ul>
+          </div>
+        </article>
+
+        <article class="project-card reveal tilt">
+          <div class="card-glare"></div>
+          <div class="project-visual v-book"><span class="project-emoji">📅</span></div>
+          <div class="project-body">
+            <span class="project-num mono">04</span>
+            <h3>Appointment Booking System</h3>
+            <ul class="project-points">
+              <li>Built an appointment booking system</li>
+              <li>Added calendar, time slots and booking forms</li>
+              <li>Created an admin panel for appointments and users</li>
+            </ul>
+            <ul class="tech mono"><li>HTML</li><li>CSS</li><li>JavaScript</li><li>React</li><li>Node.js</li><li>MySQL</li></ul>
+          </div>
+        </article>
+
+        <article class="project-card reveal tilt">
+          <div class="card-glare"></div>
+          <div class="project-visual v-bake"><span class="project-emoji">🧁</span></div>
+          <div class="project-body">
+            <span class="project-num mono">05</span>
+            <h3>Bakery &amp; Sweets Website</h3>
+            <ul class="project-points">
+              <li>Designed a responsive bakery website</li>
+              <li>Added product gallery and contact details</li>
+              <li>Ensured mobile-friendly design</li>
+            </ul>
+            <ul class="tech mono"><li>HTML</li><li>CSS</li><li>JavaScript</li><li>React</li><li>Node.js</li><li>MySQL</li></ul>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- Education -->
+    <section class="section" id="education">
+      <div class="section-head reveal">
+        <span class="section-num mono">04.</span>
+        <h2>Education &amp; Languages</h2>
+        <span class="section-line"></span>
+      </div>
+      <div class="timeline">
+        <div class="tl-item reveal">
+          <div class="tl-dot"></div>
+          <div class="tl-card tilt">
+            <span class="tl-date mono">2024 – 2026</span>
+            <h3>HND in Web Development</h3>
+            <p>NTC-KDMC-NENASALA · Kalmunai, Sri Lanka</p>
+          </div>
+        </div>
+        <div class="tl-item reveal">
+          <div class="tl-dot"></div>
+          <div class="tl-card tilt">
+            <span class="tl-date mono">2024 – 2025</span>
+            <h3>Diploma in English</h3>
+            <p>ESOFT Metro Campus · Sri Lanka</p>
+          </div>
+        </div>
+      </div>
+      <div class="langs reveal">
+        <div class="lang"><span class="lang-name">Tamil</span><span class="lang-level mono">Fluent</span></div>
+        <div class="lang"><span class="lang-name">English</span><span class="lang-level mono">Intermediate</span></div>
+      </div>
+    </section>
+
+    <!-- Contact -->
+    <section class="section" id="contact">
+      <div class="section-head reveal">
+        <span class="section-num mono">05.</span>
+        <h2>Get In Touch</h2>
+        <span class="section-line"></span>
+      </div>
+      <div class="contact-grid">
+        <div class="contact-info reveal">
+          <h3 class="contact-lead">Let's build something <span class="gradient-text">amazing</span> together.</h3>
+          <p>I'm open to full-stack, frontend and UI/UX roles as well as freelance projects. Drop me a message and I'll get back to you.</p>
+          <a class="contact-item" href="mailto:althaf.official9824@gmail.com">
+            <span class="ci-icon">✉</span><span>althaf.official9824@gmail.com</span>
+          </a>
+          <a class="contact-item" href="tel:+97431610588">
+            <span class="ci-icon">☎</span><span>+974 3161 0588</span>
+          </a>
+          <a class="contact-item" href="https://www.linkedin.com/in/althaf-ahamed123/" target="_blank" rel="noopener">
+            <span class="ci-icon">in</span><span>linkedin.com/in/althaf-ahamed123</span>
+          </a>
+          <a class="contact-item" href="https://github.com/althaf9824" target="_blank" rel="noopener">
+            <span class="ci-icon">⌥</span><span>github.com/althaf9824</span>
+          </a>
+          <div class="contact-item static">
+            <span class="ci-icon">⌖</span><span>Doha, Qatar</span>
+          </div>
+        </div>
+        <form class="contact-form reveal tilt" id="contactForm">
+          <div class="card-glare"></div>
+          <label>
+            <span>Your Name</span>
+            <input type="text" name="name" required placeholder="John Doe" />
+          </label>
+          <label>
+            <span>Your Email</span>
+            <input type="email" name="email" required placeholder="john@example.com" />
+          </label>
+          <label>
+            <span>Message</span>
+            <textarea name="message" rows="5" required placeholder="Tell me about your project..."></textarea>
+          </label>
+          <button type="submit" class="btn btn-primary">Send Message ➜</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer mono">
+    <p>Designed &amp; built by <span class="gradient-text">Mohammed Althaf</span> · © <span id="year"></span></p>
+  </footer>
+
+  <script type="module" src="js/scene.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
