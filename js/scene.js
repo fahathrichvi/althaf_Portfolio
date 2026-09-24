@@ -18,16 +18,16 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x05060f, 0.035);
+  scene.fog = new THREE.FogExp2(0x060812, 0.035);
 
   const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 200);
   camera.position.set(0, 0, 9);
 
   // ---------- Lights ----------
-  scene.add(new THREE.AmbientLight(0x404080, 1.2));
-  const cyanLight = new THREE.PointLight(0x22d3ee, 60, 30);
+  scene.add(new THREE.AmbientLight(0x2a4a60, 1.2));
+  const cyanLight = new THREE.PointLight(0x00f5a0, 60, 30);
   cyanLight.position.set(5, 3, 5);
-  const pinkLight = new THREE.PointLight(0xec4899, 50, 30);
+  const pinkLight = new THREE.PointLight(0xffb547, 45, 30);
   pinkLight.position.set(-5, -3, 3);
   scene.add(cyanLight, pinkLight);
 
@@ -38,8 +38,8 @@ function init() {
   const inner = new THREE.Mesh(
     new THREE.IcosahedronGeometry(1.35, 1),
     new THREE.MeshStandardMaterial({
-      color: 0x6d28d9,
-      emissive: 0x3b0f8c,
+      color: 0x5b3fff,
+      emissive: 0x1d1080,
       emissiveIntensity: 0.6,
       metalness: 0.6,
       roughness: 0.25,
@@ -50,20 +50,20 @@ function init() {
 
   const shell = new THREE.Mesh(
     new THREE.IcosahedronGeometry(1.95, 1),
-    new THREE.MeshBasicMaterial({ color: 0x22d3ee, wireframe: true, transparent: true, opacity: 0.35 })
+    new THREE.MeshBasicMaterial({ color: 0x00f5a0, wireframe: true, transparent: true, opacity: 0.35 })
   );
   core.add(shell);
 
   // Glowing vertices on the shell
   const vertPoints = new THREE.Points(
     new THREE.IcosahedronGeometry(1.95, 1),
-    new THREE.PointsMaterial({ color: 0x9ef3ff, size: 0.08, transparent: true, opacity: 0.9 })
+    new THREE.PointsMaterial({ color: 0xb8ffe6, size: 0.08, transparent: true, opacity: 0.9 })
   );
   core.add(vertPoints);
 
   // Orbit rings
   const rings = [];
-  const ringColors = [0x22d3ee, 0x8b5cf6, 0xec4899];
+  const ringColors = [0x00f5a0, 0x00d9f5, 0xffb547];
   ringColors.forEach((color, i) => {
     const ring = new THREE.Mesh(
       new THREE.TorusGeometry(2.6 + i * 0.45, 0.012, 8, 160),
@@ -140,7 +140,7 @@ function init() {
   const STAR_COUNT = window.innerWidth < 700 ? 1200 : 2600;
   const starPositions = new Float32Array(STAR_COUNT * 3);
   const starColors = new Float32Array(STAR_COUNT * 3);
-  const palette = [new THREE.Color(0x22d3ee), new THREE.Color(0x8b5cf6), new THREE.Color(0xec4899), new THREE.Color(0xffffff)];
+  const palette = [new THREE.Color(0x00f5a0), new THREE.Color(0x00d9f5), new THREE.Color(0x7c5cff), new THREE.Color(0xffffff)];
   for (let i = 0; i < STAR_COUNT; i++) {
     const r = THREE.MathUtils.randFloat(8, 60);
     const theta = Math.random() * Math.PI * 2;
@@ -264,9 +264,9 @@ function makeLabelTexture(text, i) {
   const c = document.createElement("canvas");
   c.width = 256; c.height = 128;
   const ctx = c.getContext("2d");
-  const colors = ["#22d3ee", "#8b5cf6", "#ec4899"];
+  const colors = ["#00f5a0", "#00d9f5", "#ffb547"];
   const col = colors[i % 3];
-  ctx.fillStyle = "rgba(11, 13, 31, 0.75)";
+  ctx.fillStyle = "rgba(12, 17, 34, 0.78)";
   roundRect(ctx, 8, 24, 240, 80, 22);
   ctx.fill();
   ctx.lineWidth = 3;
